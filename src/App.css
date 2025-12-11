@@ -53,14 +53,13 @@ body {
   background: linear-gradient(45deg, #fff, #d6d6ff, #ffe8c5);
   -webkit-background-clip: text;
   color: transparent;
-  letter-spacing: 1px;
   text-shadow: 0 0 25px rgba(255,255,255,0.3);
 }
 
 /* ---------- BUTTONS ---------- */
 .btn {
-  background: rgba(255, 255, 255, 0.17);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   padding: 12px 24px;
   border-radius: 14px;
   cursor: pointer;
@@ -77,7 +76,7 @@ body {
   box-shadow: 0 0 12px rgba(255,255,255,0.45);
 }
 
-/* Shine highlight on hover */
+/* Shine highlight */
 .btn::after {
   content: "";
   position: absolute;
@@ -112,7 +111,6 @@ body {
   box-shadow: 0 0 15px rgba(255,0,0,0.5);
 }
 
-/* Microphone active glowing animation */
 .btn.active {
   background: #00e676;
   border: none;
@@ -179,7 +177,13 @@ body {
   box-shadow: 0 0 18px rgba(255,255,255,0.6);
 }
 
-/* ---------- DROPDOWN ---------- */
+/* ---------- DROPDOWNS ---------- */
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
 select {
   padding: 12px;
   border-radius: 14px;
@@ -190,11 +194,23 @@ select {
   color: #000;
   cursor: pointer;
   transition: 0.25s;
+  max-height: 180px;
+  overflow-y: auto;
 }
 
 select:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 8px rgba(255,255,255,0.6);
+}
+
+/* Scrollbar for long list */
+select::-webkit-scrollbar {
+  width: 8px;
+}
+
+select::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.25);
+  border-radius: 8px;
 }
 
 /* ---------- TRANSLATED TEXT ---------- */
@@ -227,7 +243,7 @@ select:hover {
   transform: scale(1.25);
 }
 
-/* ---------- HISTORY LIST ---------- */
+/* ---------- HISTORY ---------- */
 .histItem {
   background: rgba(255,255,255,0.12);
   padding: 16px 20px;
