@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 
 const LANGS = [
+  // Indian Languages
   { code: "en", name: "English", tts: "en-US" },
   { code: "hi", name: "Hindi", tts: "hi-IN" },
   { code: "te", name: "Telugu", tts: "te-IN" },
@@ -11,23 +12,55 @@ const LANGS = [
   { code: "bn", name: "Bengali", tts: "bn-IN" },
   { code: "gu", name: "Gujarati", tts: "gu-IN" },
   { code: "mr", name: "Marathi", tts: "mr-IN" },
+  { code: "pa", name: "Punjabi", tts: "pa-IN" },
+  { code: "ur", name: "Urdu", tts: "ur-IN" },
+
+  // Major Asian Languages
+  { code: "zh-CN", name: "Chinese (Simplified)", tts: "zh-CN" },
+  { code: "zh-TW", name: "Chinese (Traditional)", tts: "zh-TW" },
+  { code: "ja", name: "Japanese", tts: "ja-JP" },
+  { code: "ko", name: "Korean", tts: "ko-KR" },
+  { code: "th", name: "Thai", tts: "th-TH" },
+  { code: "vi", name: "Vietnamese", tts: "vi-VN" },
+
+  // Middle East
+  { code: "ar", name: "Arabic", tts: "ar-SA" },
+  { code: "fa", name: "Persian (Farsi)", tts: "fa-IR" },
+  { code: "tr", name: "Turkish", tts: "tr-TR" },
+
+  // Europe
   { code: "fr", name: "French", tts: "fr-FR" },
   { code: "es", name: "Spanish", tts: "es-ES" },
   { code: "de", name: "German", tts: "de-DE" },
   { code: "it", name: "Italian", tts: "it-IT" },
-  { code: "ru", name: "Russian", tts: "ru-RU" },
-  { code: "ja", name: "Japanese", tts: "ja-JP" },
-  { code: "ko", name: "Korean", tts: "ko-KR" },
-  { code: "zh-CN", name: "Chinese (Simplified)", tts: "zh-CN" },
-  { code: "ar", name: "Arabic", tts: "ar-SA" },
+  { code: "pt", name: "Portuguese", tts: "pt-PT" },
+  { code: "nl", name: "Dutch", tts: "nl-NL" },
+  { code: "pl", name: "Polish", tts: "pl-PL" },
+  { code: "sv", name: "Swedish", tts: "sv-SE" },
+  { code: "no", name: "Norwegian", tts: "no-NO" },
+  { code: "da", name: "Danish", tts: "da-DK" },
+  { code: "fi", name: "Finnish", tts: "fi-FI" },
+  { code: "ro", name: "Romanian", tts: "ro-RO" },
+  { code: "cs", name: "Czech", tts: "cs-CZ" },
+
+  // African
+  { code: "sw", name: "Swahili", tts: "sw-KE" },
+  { code: "am", name: "Amharic", tts: "am-ET" },
+
+  // Others
+  { code: "id", name: "Indonesian", tts: "id-ID" },
+  { code: "ms", name: "Malay", tts: "ms-MY" },
+  { code: "uk", name: "Ukrainian", tts: "uk-UA" },
+  { code: "ru", name: "Russian", tts: "ru-RU" }
 ];
+
 
 function App() {
   const [inputText, setInputText] = useState("");
   const [translated, setTranslated] = useState("");
   const [target, setTarget] = useState("hi");
   const [listening, setListening] = useState(false);
-  const [voiceMode, setVoiceMode] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false); // live voice-to-voice mode
   const [inputLang, setInputLang] = useState("en");
   const [history, setHistory] = useState(() => {
     try {
@@ -36,18 +69,17 @@ function App() {
       return [];
     }
   });
-
   const recognitionRef = useRef(null);
   const continuousRef = useRef(false);
   const backendUrl = process.env.REACT_APP_API || "http://localhost:5000";
 
   useEffect(() => {
+    // Initialize SpeechRecognition (not all browsers support it)
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       console.warn("SpeechRecognition not supported");
       return;
     }
-
     const rec = new SpeechRecognition();
     rec.lang = LANGS.find(l => l.code === inputLang)?.tts || "en-US";
     rec.interimResults = false;
@@ -56,10 +88,12 @@ function App() {
     rec.onresult = (e) => {
       const txt = e.results[0][0].transcript;
       setInputText(txt);
+      // translate immediately if voiceMode or normal flow
       translateAndMaybeSpeak(txt);
     };
 
     rec.onend = () => {
+      // If continuous live mode is on, restart recognition
       if (continuousRef.current) {
         try { rec.start(); } catch {}
       } else {
@@ -73,12 +107,14 @@ function App() {
     };
 
     recognitionRef.current = rec;
-
+    // cleanup
     return () => {
       try { rec.onresult = null; rec.onend = null; rec.onerror = null; } catch {}
     };
-  }, [inputLang]);
+    // eslint-disable-next-line
+  }, []);
 
+  // Save history to localStorage when history changes
   useEffect(() => {
     localStorage.setItem("vt_history", JSON.stringify(history));
   }, [history]);
@@ -88,7 +124,7 @@ function App() {
     if (!rec) return alert("SpeechRecognition not supported in this browser");
     continuousRef.current = continuous;
     setListening(true);
-    try { rec.start(); } catch {}
+    rec.start();
   };
 
   const stopListening = () => {
@@ -118,10 +154,9 @@ function App() {
   const translateAndMaybeSpeak = async (txt, autoSpeak = true) => {
     const tr = await translateText(txt);
     setTranslated(tr);
-
+    // push to history
     const entry = { id: Date.now(), src: txt, target, translated: tr, at: new Date().toISOString() };
     setHistory((h) => [entry, ...h].slice(0, 200));
-
     if (autoSpeak) speakText(tr);
     return tr;
   };
@@ -131,20 +166,12 @@ function App() {
     const utter = new SpeechSynthesisUtterance(txt);
     const langObj = LANGS.find((l) => l.code === target);
     utter.lang = langObj?.tts || target;
-
-    const loadVoices = () => {
-      const voices = window.speechSynthesis.getVoices();
-      const matching = voices.find(v => v.lang && v.lang.startsWith((utter.lang || "").split("-")[0]));
-      if (matching) utter.voice = matching;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utter);
-    };
-
-    if (window.speechSynthesis.getVoices().length === 0) {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-    } else {
-      loadVoices();
-    }
+    // choose a voice close to language if available
+    const voices = window.speechSynthesis.getVoices();
+    const matching = voices.find((v) => v.lang && v.lang.startsWith((utter.lang || "").split("-")[0]));
+    if (matching) utter.voice = matching;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
   };
 
   const handleTranslateClick = async () => {
@@ -153,6 +180,7 @@ function App() {
 
   const toggleVoiceMode = () => {
     if (voiceMode) {
+      // turn off
       continuousRef.current = false;
       stopListening();
       setVoiceMode(false);
@@ -186,7 +214,7 @@ function App() {
         <h1>Voice Translator</h1>
         <div className="controls">
           <button className="btn" onClick={() => startListening(false)} disabled={listening}>🎤 Speak once</button>
-          <button className="btn secondary" onClick={stopListening} disabled={!listening}>⛔ Stop</button>
+          <button className="btn secondary" onClick={() => stopListening()} disabled={!listening}>⛔ Stop</button>
           <button className={`btn ${voiceMode ? "active" : ""}`} onClick={toggleVoiceMode}>
             🔁 {voiceMode ? "Live: ON" : "Live: OFF"}
           </button>
@@ -198,20 +226,36 @@ function App() {
           <div className="row">
             <textarea
               className="input"
-              placeholder={`Type or speak (${LANGS.find(l => l.code === inputLang)?.name}) ...`}
+              placeholder="Type or speak...."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
             />
             <div className="side">
               <label>Input Language:</label>
-              <select value={inputLang} onChange={(e) => setInputLang(e.target.value)}>
-                {LANGS.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
-              </select>
+<select
+  value={inputLang}
+  onChange={(e) => setInputLang(e.target.value)}
+>
+  {LANGS.map((l) => (
+    <option key={l.code} value={l.code}>
+      {l.name}
+    </option>
+  ))}
+</select>
 
-              <label>Translate To:</label>
-              <select value={target} onChange={(e) => setTarget(e.target.value)}>
-                {LANGS.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
-              </select>
+<label>Translate To:</label>
+<select
+  value={target}
+  onChange={(e) => setTarget(e.target.value)}
+>
+  {LANGS.map((l) => (
+    <option key={l.code} value={l.code}>
+      {l.name}
+    </option>
+  ))}
+</select>
+
+
 
               <button className="btn primary" onClick={handleTranslateClick}>Translate & Speak</button>
 
